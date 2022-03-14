@@ -1,0 +1,13 @@
+{
+	"AAC_type1": {"shell": [3, 20, 2]}, 
+	"AAC_type2": {"shell": [3, 20, 2]}, 
+	"GAAC_type1": {"shell": [3, 20, 2]}, 
+	"GAAC_type2": {"shell": [3, 20, 2]}, 
+	"SS3_type1": {"shell": [3, 20, 2]}, 
+	"SS3_type2": {"shell": [3, 20, 2]}, 
+	"SS8_type1": {"shell": [3, 20, 2]}, 
+	"SS8_type2": {"shell": [3, 20, 2]}, 
+	"AC_type1": {"shell": [1, 10, 1]}, 
+	"AC_type2": {"shell": [1, 10, 1]}, 
+	"Network-based index": {"distance": 11}
+}

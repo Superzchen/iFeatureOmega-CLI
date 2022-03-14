@@ -1,0 +1,19 @@
+{
+	"Kmer": {"kmer": 3}, 
+	"Mismatch": {"kmer": 3, "mismatch": 1}, 
+	"Subsequence": {"kmer": 3, "delta": 0}, 
+	"ENAC": {"sliding_window": 5}, 
+	"CKSNAP": {"kspace": 3}, 
+	"DPCP": {"Di-RNA-Phychem": "Rise (RNA);Roll (RNA);Shift (RNA);Slide (RNA);Tilt (RNA);Twist (RNA)"}, 
+	"DPCP type2": {"Di-RNA-Phychem": "Rise (RNA);Roll (RNA);Shift (RNA);Slide (RNA);Tilt (RNA);Twist (RNA)"}, 
+	"DAC": {"Di-RNA-Phychem": "Rise (RNA);Roll (RNA);Shift (RNA);Slide (RNA);Tilt (RNA);Twist (RNA)", "nlag": 3}, 
+	"DCC": {"Di-RNA-Phychem": "Rise (RNA);Roll (RNA);Shift (RNA);Slide (RNA);Tilt (RNA);Twist (RNA)", "nlag": 3}, 
+	"DACC": {"Di-RNA-Phychem": "Rise (RNA);Roll (RNA);Shift (RNA);Slide (RNA);Tilt (RNA);Twist (RNA)", "nlag": 3}, 
+	"PseDNC": {"Di-RNA-Phychem": "Rise (RNA);Roll (RNA);Shift (RNA);Slide (RNA);Tilt (RNA);Twist (RNA)", "weight": 0.05, "lambdaValue": 3}, 
+	"PseKNC": {"Di-RNA-Phychem": "Rise (RNA);Roll (RNA);Shift (RNA);Slide (RNA);Tilt (RNA);Twist (RNA)", "weight": 0.05, "lambdaValue": 3, "kmer": 3}, 
+	"PCPseDNC": {"Di-RNA-Phychem": "Rise (RNA);Roll (RNA);Shift (RNA);Slide (RNA);Tilt (RNA);Twist (RNA)", "weight": 0.05, "lambdaValue": 3}, 
+	"SCPseDNC": {"Di-RNA-Phychem": "Rise (RNA);Roll (RNA);Shift (RNA);Slide (RNA);Tilt (RNA);Twist (RNA)", "weight": 0.05, "lambdaValue": 3}, 
+	"NMBroto": {"nlag": 3, "Di-RNA-Phychem": "Rise (RNA);Roll (RNA);Shift (RNA);Slide (RNA);Tilt (RNA);Twist (RNA)"}, 
+	"Moran": {"nlag": 3, "Di-RNA-Phychem": "Rise (RNA);Roll (RNA);Shift (RNA);Slide (RNA);Tilt (RNA);Twist (RNA)"}, 
+	"Geary": {"nlag": 3, "Di-RNA-Phychem": "Rise (RNA);Roll (RNA);Shift (RNA);Slide (RNA);Tilt (RNA);Twist (RNA)"}
+}
