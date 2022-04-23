@@ -172,9 +172,11 @@ class iProtein(Sequence):
         super(iProtein, self).__init__(file=file)
         self.__default_para_dict = {
             'EAAC': {'sliding_window': 5},
-            'CKSAAP': {'kspace': 3},
+            'CKSAAP type 1': {'kspace': 3},
+            'CKSAAP type 2': {'kspace': 3},
             'EGAAC': {'sliding_window': 5},
-            'CKSAAGP': {'kspace': 3},
+            'CKSAAGP type 1': {'kspace': 3},
+            'CKSAAGP type 2': {'kspace': 3},
             'AAIndex': {'aaindex': 'ANDN920101;ARGP820101;ARGP820102;ARGP820103;BEGF750101;BEGF750102;BEGF750103;BHAR880101'},
             'NMBroto': {'aaindex': 'ANDN920101;ARGP820101;ARGP820102;ARGP820103;BEGF750101;BEGF750102;BEGF750103;BHAR880101', 'nlag': 3,},
             'Moran': {'aaindex': 'ANDN920101;ARGP820101;ARGP820102;ARGP820103;BEGF750101;BEGF750102;BEGF750103;BHAR880101', 'nlag': 3,},
@@ -224,10 +226,13 @@ class iProtein(Sequence):
         self.__cmd_dict ={
             'AAC': 'self._AAC()',
             'EAAC': 'self._EAAC()',
-            'CKSAAP': 'self._CKSAAP()',
-            'DPC': 'self._DPC()',
+            'CKSAAP type 1': 'self._CKSAAP(normalized=True)',
+            'CKSAAP type 2': 'self._CKSAAP(normalized=False)',
+            'DPC type 1': 'self._DPC(normalized=True)',
+            'DPC type 2': 'self._DPC(normalized=False)',
             'DDE': 'self._DDE()',
-            'TPC': 'self._TPC()',
+            'TPC type 1': 'self._TPC(normalized=True)',
+            'TPC type 2': 'self._TPC(normalized=False)',
             'binary': 'self._binary()',
             'binary_6bit': 'self._binary_6bit()',
             'binary_5bit type 1': 'self._binary_5bit_type_1()',
@@ -242,9 +247,12 @@ class iProtein(Sequence):
             'AESNN3': 'self._AESNN3()',
             'GAAC': 'self._GAAC()',
             'EGAAC': 'self._EGAAC()',
-            'CKSAAGP': 'self._CKSAAGP()',
-            'GDPC': 'self._GDPC()',
-            'GTPC': 'self._GTPC()',
+            'CKSAAGP type 1': 'self._CKSAAGP(normalized=True)',
+            'CKSAAGP type 2': 'self._CKSAAGP(normalized=False)',
+            'GDPC type 1': 'self._GDPC(normalized=True)',
+            'GDPC type 2': 'self._GDPC(normalized=False)',
+            'GTPC type 1': 'self._GTPC(normalized=True)',
+            'GTPC type 2': 'self._GTPC(normalized=False)',
             'AAIndex': 'self._AAIndex()',
             'ZScale': 'self._ZScale()',
             'BLOSUM62': 'self._BLOSUM62()',
@@ -289,6 +297,7 @@ class iProtein(Sequence):
             'PseKRAAC type 14': 'self._PseKRAAC_type_14()',
             'PseKRAAC type 15': 'self._PseKRAAC_type_15()',
             'PseKRAAC type 16': 'self._PseKRAAC_type_16()',
+            'KNN': 'self._KNN()',
         }
 
     def import_parameters(self, file):
@@ -319,9 +328,12 @@ class iProtein(Sequence):
         
         AAC                                                Amino acid composition
         EAAC                                               Enhanced amino acid composition
-        CKSAAP                                             Composition of k-spaced amino acid pairs
-        DPC                                                Dipeptide composition
-        TPC                                                Tripeptide composition
+        CKSAAP type 1                                      Composition of k-spaced amino acid pairs type 1 - normalized
+        CKSAAP type 2                                      Composition of k-spaced amino acid pairs type 2 - raw count
+        DPC type 1                                         Dipeptide composition type 1 - normalized
+        DPC type 2                                         Dipeptide composition type 2 - raw count
+        TPC type 1                                         Tripeptide composition type 1 - normalized
+        TPC type 2                                         Tripeptide composition type 1 - raw count
         CTDC                                               Composition
         CTDT                                               Transition
         CTDD                                               Distribution
@@ -331,9 +343,12 @@ class iProtein(Sequence):
         DistancePair                                       PseAAC of distance-pairs and reduced alphabe
         GAAC                                               Grouped amino acid composition
         EGAAC                                              Enhanced grouped amino acid composition
-        CKSAAGP                                            Composition of k-spaced amino acid group pairs
-        GDPC                                               Grouped dipeptide composition
-        GTPC                                               Grouped tripeptide composition
+        CKSAAGP type 1                                     Composition of k-spaced amino acid group pairs type 1- normalized
+        CKSAAGP type 2                                     Composition of k-spaced amino acid group pairs type 2- raw count
+        GDPC type 1                                        Grouped dipeptide composition type 1 - normalized
+        GDPC type 2                                        Grouped dipeptide composition type 2 - raw count
+        GTPC type 1                                        Grouped tripeptide composition type 1 - normalized
+        GTPC type 2                                        Grouped tripeptide composition type 1 - raw count
         Moran                                              Moran
         Geary                                              Geary
         NMBroto                                            Normalized Moreau-Broto
@@ -382,12 +397,19 @@ class iProtein(Sequence):
         AAIndex                                            AAIndex
         BLOSUM62                                           BLOSUM62
         ZScale                                             Z-Scales index
+        KNN                                                K-nearest neighbor
 
         Note: the first column is the names of availables feature types while the second column is description.  
         
         '''
 
         print(info)
+
+    def add_samples_label(self, file):
+        with open(file) as f:
+            labels = f.read().strip().split('\n')        
+        for i in range(np.min([len(self.fasta_list), len(labels)])):
+            self.fasta_list[i][2] = '1' if labels[i] == '1' else '0'
 
     def _AAC(self):
         try:
@@ -444,7 +466,7 @@ class iProtein(Sequence):
             self.error_msg = str(e)
             return False
 
-    def _CKSAAP(self):
+    def _CKSAAP(self, normalized=True):
         try:
             AA = 'ACDEFGHIKLMNPQRSTVWY'
             encodings = []
@@ -473,7 +495,10 @@ class iProtein(Sequence):
                             myDict[sequence[index1] + sequence[index2]] = myDict[sequence[index1] + sequence[index2]] + 1
                             sum = sum + 1
                     for pair in aaPairs:
-                        code.append(myDict[pair] / sum)
+                        if normalized:
+                            code.append(myDict[pair] / sum)
+                        else:
+                            code.append(myDict[pair])
                 encodings.append(code)
             encodings = np.array(encodings)
             self.encodings = pd.DataFrame(encodings[1:, 1:].astype(float), columns=encodings[0, 1:], index=encodings[1:, 0])
@@ -482,7 +507,7 @@ class iProtein(Sequence):
             self.error_msg = str(e)
             return False
   
-    def _DPC(self):
+    def _DPC(self, normalized=True):
         try:
             AA = 'ACDEFGHIKLMNPQRSTVWY'
             encodings = []
@@ -500,7 +525,8 @@ class iProtein(Sequence):
                     tmpCode[AADict[sequence[j]] * 20 + AADict[sequence[j + 1]]] = tmpCode[AADict[sequence[j]] * 20 + AADict[
                         sequence[j + 1]]] + 1
                 if sum(tmpCode) != 0:
-                    tmpCode = [i / sum(tmpCode) for i in tmpCode]
+                    if normalized:
+                        tmpCode = [i / sum(tmpCode) for i in tmpCode]
                 code = code + tmpCode
                 encodings.append(code)
             encodings = np.array(encodings)
@@ -551,7 +577,7 @@ class iProtein(Sequence):
             self.error_msg = str(e)
             return False
 
-    def _TPC(self):
+    def _TPC(self, normalized=True):
         try:
             AA = 'ACDEFGHIKLMNPQRSTVWY'
             encodings = []
@@ -565,10 +591,11 @@ class iProtein(Sequence):
                 name, sequence, label = i[0], re.sub('-', '', i[1]), i[2]
                 code = [name]
                 tmpCode = [0] * 8000
-                for j in range(len(sequence) - 3 + 1):                    
+                for j in range(len(sequence) - 3 + 1):
                     tmpCode[AADict[sequence[j]] * 400 + AADict[sequence[j + 1]] * 20 + AADict[sequence[j + 2]]] = tmpCode[AADict[sequence[j]] * 400 + AADict[sequence[j + 1]] * 20 + AADict[sequence[j + 2]]] + 1
                 if sum(tmpCode) != 0:
-                    tmpCode = [i / sum(tmpCode) for i in tmpCode]
+                    if normalized:
+                        tmpCode = [i / sum(tmpCode) for i in tmpCode]
                 code = code + tmpCode
                 encodings.append(code)
             encodings = np.array(encodings)
@@ -1077,7 +1104,7 @@ class iProtein(Sequence):
                 gPair[key1 + '.' + key2] = 0
         return gPair
 
-    def _CKSAAGP(self):
+    def _CKSAAGP(self, normalized=True):
         try:
             gap = self.__default_para['kspace']
             group = {
@@ -1121,7 +1148,10 @@ class iProtein(Sequence):
                             code.append(0)
                     else:
                         for gp in gPairIndex:
-                            code.append(gPair[gp] / sum)
+                            if normalized:
+                                code.append(gPair[gp] / sum)
+                            else:
+                                code.append(gPair[gp])
                 encodings.append(code)
             encodings = np.array(encodings)
             self.encodings = pd.DataFrame(encodings[1:, 1:].astype(float), columns=encodings[0, 1:], index=encodings[1:, 0])
@@ -1130,7 +1160,7 @@ class iProtein(Sequence):
             self.error_msg = str(e)
             return False
 
-    def _GDPC(self):
+    def _GDPC(self, normalized=True):
         try:
             group = {
                 'alphaticr': 'GAVLMI',
@@ -1164,7 +1194,10 @@ class iProtein(Sequence):
                         code.append(0)
                 else:
                     for t in dipeptide:
-                        code.append(myDict[t] / sum)
+                        if normalized:
+                            code.append(myDict[t] / sum)
+                        else:
+                            code.append(myDict[t])
                 encodings.append(code)
             encodings = np.array(encodings)
             self.encodings = pd.DataFrame(encodings[1:, 1:].astype(float), columns=encodings[0, 1:], index=encodings[1:, 0])
@@ -1173,7 +1206,7 @@ class iProtein(Sequence):
             self.error_msg = str(e)
             return False
 
-    def _GTPC(self):
+    def _GTPC(self, normalized=True):
         try:
             group = {
                 'alphaticr': 'GAVLMI',
@@ -1215,7 +1248,10 @@ class iProtein(Sequence):
                         code.append(0)
                 else:
                     for t in triple:
-                        code.append(myDict[t] / sum)
+                        if normalized:
+                            code.append(myDict[t] / sum)
+                        else:
+                            code.append(myDict[t])
                 encodings.append(code)
             encodings = np.array(encodings)
             self.encodings = pd.DataFrame(encodings[1:, 1:].astype(float), columns=encodings[0, 1:], index=encodings[1:, 0])
@@ -3695,6 +3731,121 @@ class iProtein(Sequence):
             self.error_msg = str(e)
             return False
 
+    ''' KNN descriptor '''
+    def Sim(self, a, b):
+        blosum62 = [
+            [ 4, -1, -2, -2,  0, -1, -1,  0, -2, -1, -1, -1, -1, -2, -1,  1,  0, -3, -2,  0, 0],  # A
+            [-1,  5,  0, -2, -3,  1,  0, -2,  0, -3, -2,  2, -1, -3, -2, -1, -1, -3, -2, -3, 0],  # R
+            [-2,  0,  6,  1, -3,  0,  0,  0,  1, -3, -3,  0, -2, -3, -2,  1,  0, -4, -2, -3, 0],  # N
+            [-2, -2,  1,  6, -3,  0,  2, -1, -1, -3, -4, -1, -3, -3, -1,  0, -1, -4, -3, -3, 0],  # D
+            [ 0, -3, -3, -3,  9, -3, -4, -3, -3, -1, -1, -3, -1, -2, -3, -1, -1, -2, -2, -1, 0],  # C
+            [-1,  1,  0,  0, -3,  5,  2, -2,  0, -3, -2,  1,  0, -3, -1,  0, -1, -2, -1, -2, 0],  # Q
+            [-1,  0,  0,  2, -4,  2,  5, -2,  0, -3, -3,  1, -2, -3, -1,  0, -1, -3, -2, -2, 0],  # E
+            [ 0, -2,  0, -1, -3, -2, -2,  6, -2, -4, -4, -2, -3, -3, -2,  0, -2, -2, -3, -3, 0],  # G
+            [-2,  0,  1, -1, -3,  0,  0, -2,  8, -3, -3, -1, -2, -1, -2, -1, -2, -2,  2, -3, 0],  # H
+            [-1, -3, -3, -3, -1, -3, -3, -4, -3,  4,  2, -3,  1,  0, -3, -2, -1, -3, -1,  3, 0],  # I
+            [-1, -2, -3, -4, -1, -2, -3, -4, -3,  2,  4, -2,  2,  0, -3, -2, -1, -2, -1,  1, 0],  # L
+            [-1,  2,  0, -1, -3,  1,  1, -2, -1, -3, -2,  5, -1, -3, -1,  0, -1, -3, -2, -2, 0],  # K
+            [-1, -1, -2, -3, -1,  0, -2, -3, -2,  1,  2, -1,  5,  0, -2, -1, -1, -1, -1,  1, 0],  # M
+            [-2, -3, -3, -3, -2, -3, -3, -3, -1,  0,  0, -3,  0,  6, -4, -2, -2,  1,  3, -1, 0],  # F
+            [-1, -2, -2, -1, -3, -1, -1, -2, -2, -3, -3, -1, -2, -4,  7, -1, -1, -4, -3, -2, 0],  # P
+            [ 1, -1,  1,  0, -1,  0,  0,  0, -1, -2, -2,  0, -1, -2, -1,  4,  1, -3, -2, -2, 0],  # S
+            [ 0, -1,  0, -1, -1, -1, -1, -2, -2, -1, -1, -1, -1, -2, -1,  1,  5, -2, -2,  0, 0],  # T
+            [-3, -3, -4, -4, -2, -2, -3, -2, -2, -3, -2, -3, -1,  1, -4, -3, -2, 11,  2, -3, 0],  # W
+            [-2, -2, -2, -3, -2, -1, -2, -3,  2, -1, -1, -2, -1,  3, -3, -2, -2,  2,  7, -1, 0],  # Y
+            [ 0, -3, -3, -3, -1, -2, -2, -3, -3,  3,  1, -2,  1, -1, -2, -2,  0, -3, -1,  4, 0],  # V
+            [ 0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0, 0],  # -
+        ]
+        AA = 'ARNDCQEGHILKMFPSTWYV-'
+        myDict = {}
+        for i in range(len(AA)):
+            myDict[AA[i]] = i
+        maxValue, minValue = 11, -4
+        return (blosum62[myDict[a]][myDict[b]] - minValue) / (maxValue - minValue)
+
+    def CalculateDistance(self, sequence1, sequence2):
+        if len(sequence1) != len(sequence2):
+            self.error_msg = 'KNN descriptor need fasta sequence with equal length.'
+            return 1
+        distance = 1 - sum([self.Sim(sequence1[i], sequence2[i]) for i in range(len(sequence1))]) / len(sequence1)
+        return distance
+
+    def CalculateContent(self, myDistance, j, myLabelSets):
+        content = []
+        myDict = {}
+        for i in myLabelSets:
+            myDict[i] = 0
+        for i in range(j):
+            myDict[myDistance[i][0]] = myDict[myDistance[i][0]] + 1
+        for i in myLabelSets:
+            content.append(myDict[myLabelSets[i]] / j)
+        return content
+
+    def _KNN(self):
+        try:
+            # clear
+            self.encoding_array = np.array([])
+
+            if not self.is_equal:
+                self.error_msg = 'KNN descriptor need fasta sequence with equal length.'
+                return False
+
+            topK_values = [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.10, 0.11, 0.12, 0.13, 0.14, 0.15, 0.16,
+                        0.17, 0.18, 0.19, 0.20, 0.21, 0.22, 0.23, 0.24, 0.25, 0.26, 0.27, 0.28, 0.29, 0.30]
+
+            training_data = []
+            training_label = {}
+            for i in self.fasta_list:
+                if i[3] == 'training':
+                    training_data.append(i)
+                    training_label[i[0]] = int(i[2])
+            tmp_label_sets = list(set(training_label.values()))
+
+            topK_numbers = []
+            for i in topK_values:
+                topK_numbers.append(math.ceil(len(training_data) * i))
+
+            # calculate pair distance
+            distance_dict = {}
+            for i in range(len(self.fasta_list)):
+                name_seq1, sequence_1, label_1, usage_1 = self.fasta_list[i][0], self.fasta_list[i][1], self.fasta_list[i][2], self.fasta_list[i][3]
+                for j in range(i+1, len(self.fasta_list)):
+                    name_seq2, sequence_2, label_2, usage_2 = self.fasta_list[j][0], self.fasta_list[j][1], self.fasta_list[j][2], self.fasta_list[j][3]
+                    if usage_1 == 'testing' and usage_2 == 'testing':
+                        continue
+                    else:
+                        distance_dict[':'.join(sorted([name_seq1, name_seq2]))] = self.CalculateDistance(sequence_1, sequence_2)
+
+            encodings = []
+            header = ['sampleName']
+            for k in topK_numbers:
+                for l in tmp_label_sets:
+                    header.append('Top' + str(k) + '.label' + str(l))
+            encodings.append(header)
+
+            for i in self.fasta_list:
+                name, sequence, label = i[0], i[1], i[2]
+                code = [name]
+                tmp_distance_list = []
+                for j in range(len(training_data)):
+                    if name != training_data[j][0]:
+                        tmp_distance_list.append([int(training_data[j][2]), distance_dict.get(':'.join(sorted([name, training_data[j][0]])), 1)])
+
+                tmp_distance_list = np.array(tmp_distance_list)
+                tmp_distance_list = tmp_distance_list[np.lexsort(tmp_distance_list.T)]
+
+                for j in topK_numbers:
+                    code += self.CalculateContent(tmp_distance_list, j, tmp_label_sets)
+                encodings.append(code)
+
+            encodings = np.array(encodings)
+            self.encodings = pd.DataFrame(encodings[1:, 1:].astype(float), columns=encodings[0, 1:], index=encodings[1:, 0])
+            return True
+        except Exception as e:
+            self.error_msg = str(e)
+            return False
+    ''' end Protein KNN descriptor '''
+    
     def to_csv(self, file="encode.csv", index=False, header=False):
         try:
             self.encodings.to_csv(file, index=index, header=header)
@@ -3765,12 +3916,15 @@ class iDNA(Sequence):
     def __init__(self, file):
         super(iDNA, self).__init__(file=file)
         self.__default_para_dict = {
-            'Kmer': {'kmer': 3},
-            'RCKmer': {'kmer': 3},
+            'Kmer type 1': {'kmer': 3},
+            'Kmer type 2': {'kmer': 3},
+            'RCKmer type 1': {'kmer': 3},
+            'RCKmer type 2': {'kmer': 3},
             'Mismatch': {'kmer': 3, 'mismatch': 1},
             'Subsequence': {'kmer': 3, 'delta': 0},
             'ENAC': {'sliding_window': 5},
-            'CKSNAP': {'kspace': 3},
+            'CKSNAP type 1': {'kspace': 3},
+            'CKSNAP type 2': {'kspace': 3},
             'DPCP': {'Di-DNA-Phychem': 'Twist;Tilt;Roll;Shift;Slide;Rise'},
             'DPCP type2': {'Di-DNA-Phychem': 'Twist;Tilt;Roll;Shift;Slide;Rise'},
             'TPCP': {'Tri-DNA-Phychem': 'Dnase I;Bendability (DNAse)'},
@@ -3807,8 +3961,10 @@ class iDNA(Sequence):
         }
         self.encodings = None       # pandas dataframe
         self.__cmd_dict ={
-            'Kmer': 'self._Kmer()',
-            'RCKmer': 'self._RCKmer()',
+            'Kmer type 1': 'self._Kmer(normalized=True)',
+            'Kmer type 2': 'self._Kmer(normalized=False)',
+            'RCKmer type 1': 'self._RCKmer(normalized=True)',
+            'RCKmer type 2': 'self._RCKmer(normalized=False)',
             'Mismatch': 'self._Mismatch()',
             'Subsequence': 'self._Subsequence()',
             'NAC': 'self._NAC()',
@@ -3818,7 +3974,8 @@ class iDNA(Sequence):
             'PS2': 'self._PS2()',
             'PS3': 'self._PS3()',
             'PS4': 'self._PS4()',
-            'CKSNAP': 'self._CKSNAP()',
+            'CKSNAP type 1': 'self._CKSNAP(normalized=True)',
+            'CKSNAP type 2': 'self._CKSNAP(normalized=False)',
             'NCP': 'self._NCP()',
             'EIIP': 'self._EIIP()',
             'PseEIIP': 'self._PseEIIP()',
@@ -3850,6 +4007,9 @@ class iDNA(Sequence):
             'PCPseTNC': 'self._PCPseTNC(my_property_name, my_property_value)',
             'SCPseDNC': 'self._SCPseDNC(my_property_name, my_property_value)',
             'SCPseTNC': 'self._SCPseTNC(my_property_name, my_property_value)',
+            'PSTNPss': 'self._PSTNPss()',
+            'PSTNPds': 'self._PSTNPds()',
+            'KNN': 'self._KNN()',
         }
 
         # variable for DAC, DCC, DACC, TAC, TCC, TACC
@@ -4043,8 +4203,10 @@ class iDNA(Sequence):
         info = '''
         ----- Available feature types ------        
         
-        Kmer                      The cccurrence frequencies of k neighboring nucleic acids
-        RCKmer                    Reverse compliment Kmer
+        Kmer type 1               The cccurrence frequencies of k neighboring nucleic acids type 1 - normalized
+        Kmer type 2               The cccurrence frequencies of k neighboring nucleic acids type 2 - raw count
+        RCKmer type 1             Reverse compliment Kmer type 1 - normalized
+        RCKmer type 2             Reverse compliment Kmer type 2 - raw count
         Mismatch                  Mismatch profile
         Subsequence               Subsequence profile
         NAC                       Nucleic acid composition
@@ -4054,7 +4216,8 @@ class iDNA(Sequence):
         PS2                       Position-specific of two nucleotides
         PS3                       Position-specific of three nucleotides
         PS4                       Postiion-specific of four nucleotides
-        CKSNAP                    Composition of k-spaced Nucleic acid pairs
+        CKSNAP type 1             Composition of k-spaced Nucleic acid pairs type 1 - normalized
+        CKSNAP type 2             Composition of k-spaced Nucleic acid pairs type 2 - raw count
         NCP                       Nucleotide chemical property
         EIIP                      Electron-ion interaction pseudopotentials value
         PseEIIP                   Electron-ion interaction pseudopotentials of trinucleotide
@@ -4085,7 +4248,10 @@ class iDNA(Sequence):
         PCPseDNC                  Parallel correlation pseudo dinucleotide composition  
         PCPseTNC                  Parallel correlation pseudo trinucleotide composition     
         SCPseDNC                  Series correlation pseudo dinucleotide composition   
-        SCPseTNC                  Series correlation pseudo trinucleotide composition      
+        SCPseTNC                  Series correlation pseudo trinucleotide composition   
+        PSTNPss                   Position-specific trinucleotide propensity based on single-strand 
+        PSTNPds                   Position-specific trinucleotide propensity based on double-strand
+        KNN                       K-nearest neighbor
 
         Note: the first column is the names of availables while the second column
               is description.  
@@ -4103,7 +4269,13 @@ class iDNA(Sequence):
                 print('File imported successfully.')
             except Exception as e:
                 print('Parameter file parser error.')
-    
+
+    def add_samples_label(self, file):
+        with open(file) as f:
+            labels = f.read().strip().split('\n')        
+        for i in range(np.min([len(self.fasta_list), len(labels)])):
+            self.fasta_list[i][2] = '1' if labels[i] == '1' else '0'
+
     def get_descriptor(self, descriptor='Kmer'):
         # copy parameters
         if descriptor in self.__default_para_dict:
@@ -4130,12 +4302,11 @@ class iDNA(Sequence):
             kmer.append(sequence[i:i + k])
         return kmer
 
-    def _Kmer(self):
+    def _Kmer(self, normalized=True):
         try:
             fastas = self.fasta_list
             k = self.__default_para['kmer']
-            upto = False
-            normalize = True
+            upto = False            
             type = self.sequence_type
 
             encoding = []
@@ -4159,7 +4330,7 @@ class iDNA(Sequence):
                     for tmpK in range(1, k + 1):
                         kmers = self.kmerArray(sequence, tmpK)
                         count.update(kmers)
-                        if normalize == True:
+                        if normalized == True:
                             for key in count:
                                 if len(key) == tmpK:
                                     count[key] = count[key] / len(kmers)
@@ -4181,7 +4352,7 @@ class iDNA(Sequence):
                     kmers = self.kmerArray(sequence, k)
                     count = Counter()
                     count.update(kmers)
-                    if normalize == True:
+                    if normalized == True:
                         for key in count:
                             count[key] = count[key] / len(kmers)
                     code = [name, label]
@@ -4325,12 +4496,11 @@ class iDNA(Sequence):
             rckmerList.add(sorted([kmer, ''.join([myDict[nc] for nc in kmer[::-1]])])[0])
         return sorted(rckmerList)
 
-    def _RCKmer(self):
+    def _RCKmer(self, normalized=True):
         try:
             fastas = self.fasta_list
             k = self.__default_para['kmer']
-            upto = False
-            normalize = True
+            upto = False            
 
             encoding = []
             header = ['SampleName', 'label']
@@ -4357,7 +4527,7 @@ class iDNA(Sequence):
                             if kmers[j] in myDict:
                                 kmers[j] = myDict[kmers[j]]
                         count.update(kmers)
-                        if normalize == True:
+                        if normalized == True:
                             for key in count:
                                 if len(key) == tmpK:
                                     count[key] = count[key] / len(kmers)
@@ -4388,7 +4558,7 @@ class iDNA(Sequence):
                             kmers[j] = myDict[kmers[j]]
                     count = Counter()
                     count.update(kmers)
-                    if normalize == True:
+                    if normalized == True:
                         for key in count:
                             count[key] = count[key] / len(kmers)
                     code = [name, label]
@@ -4554,7 +4724,7 @@ class iDNA(Sequence):
             self.error_msg = str(e)
             return False
 
-    def _CKSNAP(self):
+    def _CKSNAP(self, normalized=True):
         try:
             gap = self.__default_para['kspace']
             if self.minimum_length_without_minus < gap + 2:
@@ -4590,7 +4760,10 @@ class iDNA(Sequence):
                             myDict[sequence[index1] + sequence[index2]] = myDict[sequence[index1] + sequence[index2]] + 1
                             sum = sum + 1
                     for pair in aaPairs:
-                        code.append(myDict[pair] / sum)
+                        if normalized:
+                            code.append(myDict[pair] / sum)
+                        else:
+                            code.append(myDict[pair])
                 encodings.append(code)
             encodings = np.array(encodings)
             self.encodings = pd.DataFrame(encodings[1:, 1:].astype(float), columns=encodings[0, 1:], index=encodings[1:, 0])
@@ -6008,6 +6181,272 @@ class iDNA(Sequence):
             self.error_msg = str(e)
             return False
 
+    def CalculateMatrix(self, data, order):
+        matrix = np.zeros((len(data[0]) - 2, 64))
+        for i in range(len(data[0]) - 2):  # position
+            for j in range(len(data)):
+                if re.search('-', data[j][i:i + 3]):
+                    pass
+                else:
+                    matrix[i][order[data[j][i:i + 3]]] += 1
+        return matrix
+
+    def _PSTNPss(self):
+        try:
+            if not self.is_equal:
+                self.error_msg = 'PSTNPss descriptor need fasta sequence with equal length.'
+                return False
+
+            fastas = []
+            for item in self.fasta_list:
+                if item[3] == 'training':
+                    fastas.append(item)
+                    fastas.append([item[0], item[1], item[2], 'testing'])
+                else:
+                    fastas.append(item)
+
+            for i in fastas:
+                if re.search('[^ACGT-]', i[1]):
+                    self.error_msg = 'Illegal character included in the fasta sequences, only the "ACGT[U]" are allowed by this encoding scheme.'
+                    return False
+
+            encodings = []
+            header = ['SampleName']
+            for pos in range(len(fastas[0][1]) - 2):
+                header.append('Pos.%d' % (pos + 1))
+            encodings.append(header)
+
+            positive = []
+            negative = []
+            positive_key = []
+            negative_key = []
+            for i in fastas:
+                if i[3] == 'training':
+                    if i[2] == '1':
+                        positive.append(i[1])
+                        positive_key.append(i[0])
+                    else:
+                        negative.append(i[1])
+                        negative_key.append(i[0])
+
+            nucleotides = ['A', 'C', 'G', 'T']
+            trinucleotides = [n1 + n2 + n3 for n1 in nucleotides for n2 in nucleotides for n3 in nucleotides]
+            order = {}
+            for i in range(len(trinucleotides)):
+                order[trinucleotides[i]] = i
+
+            matrix_po = self.CalculateMatrix(positive, order)
+            matrix_ne = self.CalculateMatrix(negative, order)
+
+            positive_number = len(positive)
+            negative_number = len(negative)
+
+            for i in fastas:
+                if i[3] == 'testing':
+                    name, sequence, label = i[0], i[1], i[2]
+                    code = [name]
+                    for j in range(len(sequence) - 2):
+                        if re.search('-', sequence[j: j + 3]):
+                            code.append(0)
+                        else:
+                            p_num, n_num = positive_number, negative_number
+                            po_number = matrix_po[j][order[sequence[j: j + 3]]]
+                            if i[0] in positive_key and po_number > 0:
+                                po_number -= 1
+                                p_num -= 1
+                            ne_number = matrix_ne[j][order[sequence[j: j + 3]]]
+                            if i[0] in negative_key and ne_number > 0:
+                                ne_number -= 1
+                                n_num -= 1
+                            code.append(po_number / p_num - ne_number / n_num)
+                            # print(sequence[j: j+3], order[sequence[j: j+3]], po_number, p_num, ne_number, n_num)
+                    encodings.append(code)
+            encodings = np.array(encodings)
+            self.encodings = pd.DataFrame(encodings[1:, 1:].astype(float), columns=encodings[0, 1:], index=encodings[1:, 0])
+            return True
+        except Exception as e:
+            self.error_msg = str(e)
+            return False
+
+    def _PSTNPds(self):
+        try:
+            if not self.is_equal:
+                self.error_msg = 'PSTNPds descriptor need fasta sequence with equal length.'
+                return False
+
+            fastas = []
+            for item in self.fasta_list:
+                if item[3] == 'training':
+                    fastas.append(item)
+                    fastas.append([item[0], item[1], item[2], 'testing'])
+                else:
+                    fastas.append(item)
+
+            for i in fastas:
+                if re.search('[^ACGT-]', i[1]):
+                    self.error_msg = 'Illegal character included in the fasta sequences, only the "ACGT[U]" are allowed by this encoding scheme.'
+                    return False
+
+            for i in fastas:
+                i[1] = re.sub('T', 'A', i[1])
+                i[1] = re.sub('G', 'C', i[1])
+
+            encodings = []
+            header = ['SampleName']
+            for pos in range(len(fastas[0][1]) - 2):
+                header.append('Pos.%d' % (pos + 1))
+            encodings.append(header)
+
+            positive = []
+            negative = []
+            positive_key = []
+            negative_key = []
+            for i in fastas:
+                if i[3] == 'training':
+                    if i[2] == '1':
+                        positive.append(i[1])
+                        positive_key.append(i[0])
+                    else:
+                        negative.append(i[1])
+                        negative_key.append(i[0])
+
+            nucleotides = ['A', 'C']
+            trinucleotides = [n1 + n2 + n3 for n1 in nucleotides for n2 in nucleotides for n3 in nucleotides]
+            order = {}
+            for i in range(len(trinucleotides)):
+                order[trinucleotides[i]] = i
+
+            matrix_po = self.CalculateMatrix(positive, order)
+            matrix_ne = self.CalculateMatrix(negative, order)
+
+            positive_number = len(positive)
+            negative_number = len(negative)
+
+            for i in fastas:
+                if i[3] == 'testing':
+                    name, sequence, label = i[0], i[1], i[2]
+                    code = [name]
+                    for j in range(len(sequence) - 2):
+                        if re.search('-', sequence[j: j + 3]):
+                            code.append(0)
+                        else:
+                            p_num, n_num = positive_number, negative_number
+                            po_number = matrix_po[j][order[sequence[j: j + 3]]]
+                            if i[0] in positive_key and po_number > 0:
+                                po_number -= 1
+                                p_num -= 1
+                            ne_number = matrix_ne[j][order[sequence[j: j + 3]]]
+                            if i[0] in negative_key and ne_number > 0:
+                                ne_number -= 1
+                                n_num -= 1
+                            code.append(po_number / p_num - ne_number / n_num)
+                            # print(sequence[j: j+3], order[sequence[j: j+3]], po_number, p_num, ne_number, n_num)
+                    encodings.append(code)
+            encodings = np.array(encodings)
+            self.encodings = pd.DataFrame(encodings[1:, 1:].astype(float), columns=encodings[0, 1:], index=encodings[1:, 0])
+            return True
+        except Exception as e:
+            self.error_msg = str(e)
+            return False
+
+    ''' DNA/RNA KNN descriptor '''
+    def SimN(self, a, b):
+        score_matrix = [
+            [ 2, -1, -1, -1, -1],  # A
+            [-1,  2, -1, -1, -1],  # C
+            [-1, -1,  2, -1, -1],  # G
+            [-1, -1, -1,  2, -1],  # T
+            [-1, -1, -1, -1,  2],  # -
+        ]
+        AA = 'ACGT-'
+        myDict = {}
+        for i in range(len(AA)):
+            myDict[AA[i]] = i
+        maxValue, minValue = 2, -1
+        return (score_matrix[myDict[a]][myDict[b]] - minValue) / (maxValue - minValue)
+
+    def CalculateContent(self, myDistance, j, myLabelSets):
+        content = []
+        myDict = {}
+        for i in myLabelSets:
+            myDict[i] = 0
+        for i in range(j):
+            myDict[myDistance[i][0]] = myDict[myDistance[i][0]] + 1
+        for i in myLabelSets:
+            content.append(myDict[myLabelSets[i]] / j)
+        return content
+
+    def CalculateDistanceN(self, sequence1, sequence2):
+        if len(sequence1) != len(sequence2):
+            self.error_msg = 'KNN descriptor need fasta sequence with equal length.'
+            return 1
+        distance = 1 - sum([self.SimN(sequence1[i], sequence2[i]) for i in range(len(sequence1))]) / len(sequence1)
+        return distance
+
+    def _KNN(self):
+        try:
+        # clear
+            self.encoding_array = np.array([])
+
+            if not self.is_equal:
+                self.error_msg = 'KNN descriptor need fasta sequence with equal length.'
+                return False
+
+            topK_values = [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.10, 0.11, 0.12, 0.13, 0.14, 0.15, 0.16,
+                        0.17, 0.18, 0.19, 0.20, 0.21, 0.22, 0.23, 0.24, 0.25, 0.26, 0.27, 0.28, 0.29, 0.30]
+
+            training_data = []
+            training_label = {}
+            for i in self.fasta_list:
+                if i[3] == 'training':
+                    training_data.append(i)
+                    training_label[i[0]] = int(i[2])
+            tmp_label_sets = list(set(training_label.values()))
+
+            topK_numbers = []
+            for i in topK_values:
+                topK_numbers.append(math.ceil(len(training_data) * i))
+
+            # calculate pair distance
+            distance_dict = {}
+            for i in range(len(self.fasta_list)):
+                name_seq1, sequence_1, label_1, usage_1 = self.fasta_list[i][0], self.fasta_list[i][1], self.fasta_list[i][2], self.fasta_list[i][3]
+                for j in range(i+1, len(self.fasta_list)):
+                    name_seq2, sequence_2, label_2, usage_2 = self.fasta_list[j][0], self.fasta_list[j][1], self.fasta_list[j][2], self.fasta_list[j][3]
+                    if usage_1 == 'testing' and usage_2 == 'testing':
+                        continue
+                    else:
+                        distance_dict[':'.join(sorted([name_seq1, name_seq2]))] = self.CalculateDistanceN(sequence_1, sequence_2)
+
+            encodings = []
+            header = ['sampleName']
+            for k in topK_numbers:
+                for l in tmp_label_sets:
+                    header.append('Top' + str(k) + '.label' + str(l))
+            encodings.append(header)
+
+            for i in self.fasta_list:
+                name, sequence, label = i[0], i[1], i[2]
+                code = [name]
+                tmp_distance_list = []
+                for j in range(len(training_data)):
+                    if name != training_data[j][0]:
+                        tmp_distance_list.append([int(training_data[j][2]), distance_dict.get(':'.join(sorted([name, training_data[j][0]])), 1)])
+
+                tmp_distance_list = np.array(tmp_distance_list)
+                tmp_distance_list = tmp_distance_list[np.lexsort(tmp_distance_list.T)]
+
+                for j in topK_numbers:
+                    code += self.CalculateContent(tmp_distance_list, j, tmp_label_sets)
+                encodings.append(code)
+
+            encodings = np.array(encodings)
+            self.encodings = pd.DataFrame(encodings[1:, 1:].astype(float), columns=encodings[0, 1:], index=encodings[1:, 0])
+            return True
+        except Exception as e:
+            self.error_msg = str(e)
+            return False
+
     def to_csv(self, file="encode.csv", index=False, header=False):
         try:
             self.encodings.to_csv(file, index=index, header=header)
@@ -6078,11 +6517,13 @@ class iRNA(Sequence):
     def __init__(self, file):
         super(iRNA, self).__init__(file=file)
         self.__default_para_dict = {
-            'Kmer': {'kmer': 3},            
+            'Kmer type 1': {'kmer': 3},
+            'Kmer type 2': {'kmer': 3}, 
             'Mismatch': {'kmer': 3, 'mismatch': 1},
             'Subsequence': {'kmer': 3, 'delta': 0},
             'ENAC': {'sliding_window': 5},
-            'CKSNAP': {'kspace': 3},
+            'CKSNAP type 1': {'kspace': 3},
+            'CKSNAP type 2': {'kspace': 3},
             'DPCP': {'Di-RNA-Phychem': 'Rise (RNA);Roll (RNA);Shift (RNA);Slide (RNA);Tilt (RNA);Twist (RNA)'},
             'DPCP type2': {'Di-RNA-Phychem': 'Rise (RNA);Roll (RNA);Shift (RNA);Slide (RNA);Tilt (RNA);Twist (RNA)'},            
             'DAC': {'Di-RNA-Phychem': 'Rise (RNA);Roll (RNA);Shift (RNA);Slide (RNA);Tilt (RNA);Twist (RNA)', 'nlag': 3},
@@ -6094,7 +6535,7 @@ class iRNA(Sequence):
             'SCPseDNC': {'Di-RNA-Phychem': 'Rise (RNA);Roll (RNA);Shift (RNA);Slide (RNA);Tilt (RNA);Twist (RNA)', 'weight': 0.05, 'lambdaValue': 3},            
             'NMBroto': {'nlag': 3, 'Di-RNA-Phychem': 'Rise (RNA);Roll (RNA);Shift (RNA);Slide (RNA);Tilt (RNA);Twist (RNA)'},
             'Moran': {'nlag': 3, 'Di-RNA-Phychem': 'Rise (RNA);Roll (RNA);Shift (RNA);Slide (RNA);Tilt (RNA);Twist (RNA)'},
-            'Geary': {'nlag': 3, 'Di-RNA-Phychem': 'Rise (RNA);Roll (RNA);Shift (RNA);Slide (RNA);Tilt (RNA);Twist (RNA)'},         
+            'Geary': {'nlag': 3, 'Di-RNA-Phychem': 'Rise (RNA);Roll (RNA);Shift (RNA);Slide (RNA);Tilt (RNA);Twist (RNA)'},
         }
         self.__default_para = {
             'sliding_window': 5,
@@ -6111,7 +6552,8 @@ class iRNA(Sequence):
         }
         self.encodings = None       # pandas dataframe
         self.__cmd_dict ={
-            'Kmer': 'self._Kmer()',
+            'Kmer type 1': 'self._Kmer(normalized=True)',
+            'Kmer type 2': 'self._Kmer(normalized=False)',
             'Mismatch': 'self._Mismatch()',
             'Subsequence': 'self._Subsequence()',
             'NAC': 'self._NAC()',
@@ -6122,7 +6564,8 @@ class iRNA(Sequence):
             'PS2': 'self._PS2()',
             'PS3': 'self._PS3()',
             'PS4': 'self._PS4()',
-            'CKSNAP': 'self._CKSNAP()',
+            'CKSNAP type 1': 'self._CKSNAP(normalized=True)',
+            'CKSNAP type 2': 'self._CKSNAP(normalized=False)',
             'ASDC': 'self._ASDC()',
             'DBE': 'self._DBE()',
             'LPDF': 'self._LPDF()',
@@ -6143,7 +6586,9 @@ class iRNA(Sequence):
             'PseDNC': 'self._PseDNC(my_property_name, my_property_value)',
             'PseKNC': 'self._PseKNC(my_property_name, my_property_value)',
             'PCPseDNC': 'self._PCPseDNC(my_property_name, my_property_value)',
-            'SCPseDNC': 'self._SCPseDNC(my_property_name, my_property_value)',            
+            'SCPseDNC': 'self._SCPseDNC(my_property_name, my_property_value)',
+            'PSTNPss': 'self._PSTNPss()',
+            'KNN': 'self._KNN()',
         }
 
         # variable for DAC, DCC, DACC, TAC, TCC, TACC
@@ -6347,7 +6792,8 @@ class iRNA(Sequence):
         info = '''
         ----- Available feature types ------        
         
-        Kmer                      The cccurrence frequencies of k neighboring nucleic acids        
+        Kmer type 1               The cccurrence frequencies of k neighboring nucleic acids type 1 normalized
+        Kmer type 2               The cccurrence frequencies of k neighboring nucleic acids type 2 raw count       
         Mismatch                  Mismatch profile
         Subsequence               Subsequence profile
         NAC                       Nucleic acid composition
@@ -6357,7 +6803,8 @@ class iRNA(Sequence):
         PS2                       Position-specific of two nucleotides
         PS3                       Position-specific of three nucleotides
         PS4                       Postiion-specific of four nucleotides
-        CKSNAP                    Composition of k-spaced Nucleic acid pairs
+        CKSNAP type 1             Composition of k-spaced Nucleic acid pairs type 1 - normalized
+        CKSNAP type 2             Composition of k-spaced Nucleic acid pairs type 2 - raw count
         NCP                       Nucleotide chemical property        
         ASDC                      Adaptive skip dinucleotide composition
         DBE                       Dinucleotide binary encoding
@@ -6388,6 +6835,12 @@ class iRNA(Sequence):
         
         print(info)
     
+    def add_samples_label(self, file):
+        with open(file) as f:
+            labels = f.read().strip().split('\n')        
+        for i in range(np.min([len(self.fasta_list), len(labels)])):
+            self.fasta_list[i][2] = '1' if labels[i] == '1' else '0'
+
     def get_descriptor(self, descriptor='Kmer'):
         # copy parameters
         if descriptor in self.__default_para_dict:
@@ -6415,12 +6868,11 @@ class iRNA(Sequence):
             kmer.append(sequence[i:i + k])
         return kmer
 
-    def _Kmer(self):
+    def _Kmer(self, normalized=True):
         try:
             fastas = self.fasta_list
             k = self.__default_para['kmer']
-            upto = False
-            normalize = True
+            upto = False            
             type = self.sequence_type
 
             encoding = []
@@ -6444,7 +6896,7 @@ class iRNA(Sequence):
                     for tmpK in range(1, k + 1):
                         kmers = self.kmerArray(sequence, tmpK)
                         count.update(kmers)
-                        if normalize == True:
+                        if normalized == True:
                             for key in count:
                                 if len(key) == tmpK:
                                     count[key] = count[key] / len(kmers)
@@ -6466,7 +6918,7 @@ class iRNA(Sequence):
                     kmers = self.kmerArray(sequence, k)
                     count = Counter()
                     count.update(kmers)
-                    if normalize == True:
+                    if normalized == True:
                         for key in count:
                             count[key] = count[key] / len(kmers)
                     code = [name, label]
@@ -6836,7 +7288,7 @@ class iRNA(Sequence):
             self.error_msg = str(e)
             return False
 
-    def _CKSNAP(self):
+    def _CKSNAP(self, normalized=True):
         try:
             gap = self.__default_para['kspace']
             if self.minimum_length_without_minus < gap + 2:
@@ -6872,9 +7324,12 @@ class iRNA(Sequence):
                             myDict[sequence[index1] + sequence[index2]] = myDict[sequence[index1] + sequence[index2]] + 1
                             sum = sum + 1
                     for pair in aaPairs:
-                        code.append(myDict[pair] / sum)
+                        if normalized:
+                            code.append(myDict[pair] / sum)
+                        else:
+                            code.append(myDict[pair])
                 encodings.append(code)
-            encodings = np.array(encodings)            
+            encodings = np.array(encodings)
             self.encodings = pd.DataFrame(encodings[1:, 1:].astype(float), columns=encodings[0, 1:], index=encodings[1:, 0])
             return True
         except Exception as e:
@@ -8291,6 +8746,191 @@ class iRNA(Sequence):
             self.error_msg = str(e)
             return False
 
+    def CalculateMatrix(self, data, order):
+        matrix = np.zeros((len(data[0]) - 2, 64))
+        for i in range(len(data[0]) - 2):  # position
+            for j in range(len(data)):
+                if re.search('-', data[j][i:i + 3]):
+                    pass
+                else:
+                    matrix[i][order[data[j][i:i + 3]]] += 1
+        return matrix
+
+    def _PSTNPss(self):
+        try:
+            if not self.is_equal:
+                self.error_msg = 'PSTNPss descriptor need fasta sequence with equal length.'
+                return False
+
+            fastas = []
+            for item in self.fasta_list:
+                if item[3] == 'training':
+                    fastas.append(item)
+                    fastas.append([item[0], item[1], item[2], 'testing'])
+                else:
+                    fastas.append(item)
+
+            for i in fastas:
+                if re.search('[^ACGT-]', i[1]):
+                    self.error_msg = 'Illegal character included in the fasta sequences, only the "ACGT[U]" are allowed by this encoding scheme.'
+                    return False
+
+            encodings = []
+            header = ['SampleName']
+            for pos in range(len(fastas[0][1]) - 2):
+                header.append('Pos.%d' % (pos + 1))
+            encodings.append(header)
+
+            positive = []
+            negative = []
+            positive_key = []
+            negative_key = []
+            for i in fastas:
+                if i[3] == 'training':
+                    if i[2] == '1':
+                        positive.append(i[1])
+                        positive_key.append(i[0])
+                    else:
+                        negative.append(i[1])
+                        negative_key.append(i[0])
+
+            nucleotides = ['A', 'C', 'G', 'T']
+            trinucleotides = [n1 + n2 + n3 for n1 in nucleotides for n2 in nucleotides for n3 in nucleotides]
+            order = {}
+            for i in range(len(trinucleotides)):
+                order[trinucleotides[i]] = i
+
+            matrix_po = self.CalculateMatrix(positive, order)
+            matrix_ne = self.CalculateMatrix(negative, order)
+
+            positive_number = len(positive)
+            negative_number = len(negative)
+
+            for i in fastas:
+                if i[3] == 'testing':
+                    name, sequence, label = i[0], i[1], i[2]
+                    code = [name]
+                    for j in range(len(sequence) - 2):
+                        if re.search('-', sequence[j: j + 3]):
+                            code.append(0)
+                        else:
+                            p_num, n_num = positive_number, negative_number
+                            po_number = matrix_po[j][order[sequence[j: j + 3]]]
+                            if i[0] in positive_key and po_number > 0:
+                                po_number -= 1
+                                p_num -= 1
+                            ne_number = matrix_ne[j][order[sequence[j: j + 3]]]
+                            if i[0] in negative_key and ne_number > 0:
+                                ne_number -= 1
+                                n_num -= 1
+                            code.append(po_number / p_num - ne_number / n_num)
+                            # print(sequence[j: j+3], order[sequence[j: j+3]], po_number, p_num, ne_number, n_num)
+                    encodings.append(code)
+            encodings = np.array(encodings)
+            self.encodings = pd.DataFrame(encodings[1:, 1:].astype(float), columns=encodings[0, 1:], index=encodings[1:, 0])
+            return True
+        except Exception as e:
+            self.error_msg = str(e)
+            return False
+
+    ''' DNA/RNA KNN descriptor '''
+    def SimN(self, a, b):
+        score_matrix = [
+            [ 2, -1, -1, -1, -1],  # A
+            [-1,  2, -1, -1, -1],  # C
+            [-1, -1,  2, -1, -1],  # G
+            [-1, -1, -1,  2, -1],  # T
+            [-1, -1, -1, -1,  2],  # -
+        ]
+        AA = 'ACGT-'
+        myDict = {}
+        for i in range(len(AA)):
+            myDict[AA[i]] = i
+        maxValue, minValue = 2, -1
+        return (score_matrix[myDict[a]][myDict[b]] - minValue) / (maxValue - minValue)
+
+    def CalculateContent(self, myDistance, j, myLabelSets):
+        content = []
+        myDict = {}
+        for i in myLabelSets:
+            myDict[i] = 0
+        for i in range(j):
+            myDict[myDistance[i][0]] = myDict[myDistance[i][0]] + 1
+        for i in myLabelSets:
+            content.append(myDict[myLabelSets[i]] / j)
+        return content
+
+    def CalculateDistanceN(self, sequence1, sequence2):
+        if len(sequence1) != len(sequence2):
+            self.error_msg = 'KNN descriptor need fasta sequence with equal length.'
+            return 1
+        distance = 1 - sum([self.SimN(sequence1[i], sequence2[i]) for i in range(len(sequence1))]) / len(sequence1)
+        return distance
+
+    def _KNN(self):
+        try:
+        # clear
+            self.encoding_array = np.array([])
+
+            if not self.is_equal:
+                self.error_msg = 'KNN descriptor need fasta sequence with equal length.'
+                return False
+
+            topK_values = [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.10, 0.11, 0.12, 0.13, 0.14, 0.15, 0.16,
+                        0.17, 0.18, 0.19, 0.20, 0.21, 0.22, 0.23, 0.24, 0.25, 0.26, 0.27, 0.28, 0.29, 0.30]
+
+            training_data = []
+            training_label = {}
+            for i in self.fasta_list:
+                if i[3] == 'training':
+                    training_data.append(i)
+                    training_label[i[0]] = int(i[2])
+            tmp_label_sets = list(set(training_label.values()))
+
+            topK_numbers = []
+            for i in topK_values:
+                topK_numbers.append(math.ceil(len(training_data) * i))
+
+            # calculate pair distance
+            distance_dict = {}
+            for i in range(len(self.fasta_list)):
+                name_seq1, sequence_1, label_1, usage_1 = self.fasta_list[i][0], self.fasta_list[i][1], self.fasta_list[i][2], self.fasta_list[i][3]
+                for j in range(i+1, len(self.fasta_list)):
+                    name_seq2, sequence_2, label_2, usage_2 = self.fasta_list[j][0], self.fasta_list[j][1], self.fasta_list[j][2], self.fasta_list[j][3]
+                    if usage_1 == 'testing' and usage_2 == 'testing':
+                        continue
+                    else:
+                        distance_dict[':'.join(sorted([name_seq1, name_seq2]))] = self.CalculateDistanceN(sequence_1, sequence_2)
+
+            encodings = []
+            header = ['sampleName']
+            for k in topK_numbers:
+                for l in tmp_label_sets:
+                    header.append('Top' + str(k) + '.label' + str(l))
+            encodings.append(header)
+
+            for i in self.fasta_list:
+                name, sequence, label = i[0], i[1], i[2]
+                code = [name]
+                tmp_distance_list = []
+                for j in range(len(training_data)):
+                    if name != training_data[j][0]:
+                        tmp_distance_list.append([int(training_data[j][2]), distance_dict.get(':'.join(sorted([name, training_data[j][0]])), 1)])
+
+                tmp_distance_list = np.array(tmp_distance_list)
+                tmp_distance_list = tmp_distance_list[np.lexsort(tmp_distance_list.T)]                
+
+                for j in topK_numbers:
+                    code += self.CalculateContent(tmp_distance_list, j, tmp_label_sets)
+                encodings.append(code)
+
+            encodings = np.array(encodings)
+            self.encodings = pd.DataFrame(encodings[1:, 1:].astype(float), columns=encodings[0, 1:], index=encodings[1:, 0])
+            return True
+        except Exception as e:
+            self.error_msg = str(e)
+            return False
+    
     def to_csv(self, file="encode.csv", index=False, header=False):
         try:
             self.encodings.to_csv(file, index=index, header=header)
@@ -10212,12 +10852,14 @@ class iPlot():
         
  
 if __name__ == '__main__':
-    # dna = iDNA('./data_examples/DNA_sequences.txt')
+    dna = iDNA('./data_examples/DNA_sequences.txt')
     # dna.import_parameters('parameters/DNA_parameters_setting.json')
-    # status = dna.get_descriptor('Kmer')
-    # dna.display_feature_types()
-    # print(dna.encodings)
-    # print(dna.error_msg)
+    dna.add_samples_label('./data_examples/peptide_sample_label.txt')
+    
+    status = dna.get_descriptor('PSTNPds')
+   
+    print(dna.encodings)
+    
 
 
     # plot = iPlot(dna.encodings, label=False)
@@ -10245,8 +10887,14 @@ if __name__ == '__main__':
     # myPlot.boxplot(descriptors=(0, 10), output='boxplot.pdf')
     # myPlot.circularplot(samples=True, sample_range=(0, 30), cutoff=0.5, output='circularplot.pdf')
 
-    ligand = iLigand('data_examples/Chemical_SMILES.txt')
-    status = ligand.get_descriptor('Basak')
-    print(ligand.encodings)
+    # ligand = iLigand('data_examples/Chemical_SMILES.txt')
+    # status = ligand.get_descriptor('Basak')
+    # print(ligand.encodings)
 
+    # protein = iProtein('./data_examples/peptide_sequences.txt')    
+    # protein.add_samples_label('./data_examples/peptide_sample_label.txt')
+    # status = protein.get_descriptor('KNN')
+    # print(protein.encodings)
+
+    # print(list(protein.encodings.values[0]))
 
