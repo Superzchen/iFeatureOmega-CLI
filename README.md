@@ -22,6 +22,9 @@
   $ conda install -c salilab dssp
   $ conda install -c bioconda msms
   $ conda install networkx
+  $ pip install PyQt5
+  $ sudo apt-get install libxcb-xinerama0
+
   ``` 
   **Note:** dssp and msms can not be install on Windows system.
   
