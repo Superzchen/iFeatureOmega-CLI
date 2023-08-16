@@ -22,6 +22,7 @@
   $ conda install -c salilab dssp
   $ conda install -c bioconda msms
   $ conda install networkx
+  $ conda install PyQt5
   ``` 
   **Note:** dssp and msms can not be install on Windows system.
   
